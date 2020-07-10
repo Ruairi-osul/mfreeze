@@ -2,3 +2,5 @@ venv
 .vscode
 *.egg*
 .ipynb_*
+vids*
+notebooks*
