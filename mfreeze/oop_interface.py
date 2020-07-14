@@ -1,4 +1,5 @@
 import mfreeze.freezelib
+import mfreeze.video
 import numpy as np
 import mfreeze.utils
 from pathlib import Path
@@ -33,7 +34,7 @@ def _run_check(f):
     return wrapped
 
 
-class BaseFreezeProcessor:
+class BaseProcessor:
     def __init__(
         self,
         video_path,
@@ -73,7 +74,7 @@ class BaseFreezeProcessor:
         return cap.get(cv2.CAP_PROP_FPS)
 
     def interactive_crop(self):
-        image, boxcrop = mfreeze.freezelib.interactive_crop(
+        image, boxcrop = mfreeze.video.interactive_crop(
             self.video_path, frame=self.start_frame
         )
         self._using_crop_interactive = True
@@ -95,7 +96,7 @@ class BaseFreezeProcessor:
         }
 
 
-class FreezeDetector(BaseFreezeProcessor):
+class FreezeDetector(BaseProcessor):
     def __init__(
         self,
         video_path,
@@ -186,7 +187,7 @@ class FreezeDetector(BaseFreezeProcessor):
         if outpath is None:
             fn = f"{self.save_video_prefix}{self.video_name}"
             outpath = str(self.save_video_dir / fn)
-        mfreeze.freezelib.save_video(
+        mfreeze.video.save_video(
             self.video_path,
             outpath,
             self.freezes_,
@@ -223,8 +224,7 @@ class FreezeDetector(BaseFreezeProcessor):
         )
 
     def __repr__(self):
-        name = Path(self.video_path).name
-        return f"<FreezeDetector: {name}>"
+        return f"<FreezeDetector: {self.video_name}>"
 
 
 class FreezeDetectorBath:

@@ -4,3 +4,4 @@ venv
 .ipynb_*
 vids*
 notebooks*
+__pycache__
