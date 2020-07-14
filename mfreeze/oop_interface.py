@@ -183,11 +183,13 @@ class FreezeDetector(BaseProcessor):
             plt.legend()
         return ax
 
+    @_run_check
+    @_update_plot_interactive
     def save_video(self, outpath=None, start_frame=0, stop_frame=None):
         if outpath is None:
             fn = f"{self.save_video_prefix}{self.video_name}"
             outpath = str(self.save_video_dir / fn)
-        mfreeze.video.save_video(
+        mfreeze.video.save_freeze_video(
             self.video_path,
             outpath,
             self.freezes_,
@@ -227,31 +229,12 @@ class FreezeDetector(BaseProcessor):
         return f"<FreezeDetector: {self.video_name}>"
 
 
-class FreezeDetectorBath:
-    def __init__(
-        self,
-        motion_threshold=None,
-        freeze_threshold=None,
-        min_freeze_duration=None,
-        save_video=False,
-        save_video_path=None,
-        crop_max_height=None,
-        crop_min_height=None,
-        crop_max_width=None,
-        crop_min_width=None,
-    ):
-        self._detectors = []
+class LoctionTracker(BaseProcessor):
+    def __init__(self):
         pass
 
-    def run_analysis(self, video_paths):
-        for path in video_paths:
-            detector = FreezeDetector().run_analysis(path)
-            self._detectors.append(detector)
+    def track_location(self):
+        pass
 
-    @_run_check
     def generate_report(self):
-        pass
-
-    @_run_check
-    def save_videos(self, save_dir, prefix=None, suffix=None):
         pass

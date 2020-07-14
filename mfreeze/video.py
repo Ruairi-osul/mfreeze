@@ -44,7 +44,7 @@ def interactive_crop(
     return (image * box), box_stream
 
 
-def save_video(
+def save_freeze_video(
     source_video_path,
     outfile_path,
     freezes=None,
