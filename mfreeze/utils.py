@@ -1,5 +1,4 @@
 import numpy as np
-import numba
 
 
 def _runs(arr, val):
@@ -15,11 +14,6 @@ def _runs(arr, val):
     is_val = np.concatenate((np.array([0]), is_val, np.array([0])))
     absdiff = np.abs(np.diff(is_val))
     return np.where(absdiff == 1)[0].reshape(-1, 2)
-
-
-@numba.njit
-def _frame_subtract(old, new):
-    return np.mean(np.absolute(np.subtract(old, new)))
 
 
 def _crop_frame(frame, rmin, rmax, cmin, cmax):

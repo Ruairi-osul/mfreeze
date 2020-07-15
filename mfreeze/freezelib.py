@@ -1,53 +1,13 @@
 import cv2
-from pathlib import Path
-import holoviews as hv
 import numpy as np
-from holoviews import streams
-import warnings
 from scipy.signal import medfilt
 from .utils import _crop_frame, _runs, _parse_crop_settings
 
 
-def interactive_crop(
-    video_path, frame=0,
-):
-    """
-    Loads and displays a frame for a video to be used for cropping.
-    Cropping automatically updated using holoviews stream object.
-
-    Args:
-        video_path (str): Path to the video
-        frame (int): The index of the frame to be used for cropping
-    Returns:
-        image, stream
-    """
-
-    hv.notebook_extension("bokeh")
-    cap = cv2.VideoCapture(video_path)
-    cap.set(cv2.CAP_PROP_POS_FRAMES, frame)
-    _, frame = cap.read()
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    cap.release()
-
-    image = hv.Image((np.arange(frame.shape[1]), np.arange(frame.shape[0]), frame))
-    image.opts(
-        width=frame.shape[1],
-        height=frame.shape[0],
-        invert_yaxis=True,
-        cmap="gray",
-        colorbar=True,
-        toolbar="below",
-        title="First Frame.  Crop if Desired",
-    )
-
-    box = hv.Polygons([])
-    box.opts(alpha=0.5)
-    box_stream = streams.BoxEdit(source=box, num_objects=1)
-    return (image * box), box_stream
-
-
 def detect_motion(
     video_path,
+    use_med_filter=True,
+    med_filter_size=3,
     start_frame=0,
     stop_frame=None,
     crop_interactive=None,
@@ -55,22 +15,25 @@ def detect_motion(
     crop_cmax=None,
     crop_rmin=None,
     crop_rmax=None,
-    use_med_filter=True,
-    med_filter_size=3,
 ):
     """
-    Returns the number of pixels exeding the motion threshold in each frame.
+    Estimates the amount of motion in each frame in of a video.
+
+    The estimation is made by comparing grayscale pixel values in concecutive frames.
 
     Args:
-        video_path (str): Path to a the video file
-        motion_threshold (float): The threshold value used for. Units are change in greyscale pixel
-                          value between frames.
-        start_frame (int): Frame index to use as intial frame.
-        stop_frame (int): Frame to use as
-        crop (holoviews.streams.BoxEdit): Holoviews stream object to use if cropping image.
-                                          This can be obtained from mfreeze.crop
-        gaussian_kernel (tuple): Kernel to use for gaussian smoothing of frames.
-        gaussian_sigma (float): Smoothing parameter to use for gaussian smoothing of frames.
+        video_path (str): Path to the video
+        use_med_filter (bool): Whether to apply a median filter to the motion estimates.
+        med_filter_size (int): If using a median filter, the size of the filter to use.
+        start_frame (int): The first frame to use.
+        stop_frame (int): The final frame to use. Defaults to the last frame.
+        crop_interactive (holoviews.streams.BoxEdit): Holoviews stream object to use if using the interactive cropping
+                                                      functionality. This can be obtained from the mfreeze.video.crop
+                                                      function.
+        crop_cmin (int): Optional value for manual cropping. Specifies minimum column value for each frame.
+        crop_cmax (int): Optional value for manual cropping. Specifies maximum column value for each frame.
+        crop_rmin (int): Optional value for manual cropping. Specifies minimum row value for each frame.
+        crop_rmax (int): Optional value for manual cropping. Specifies maximum row values for each frame.
     Returns:
         A numpy array containing the number of pixels exceding the motion threshold per frame.
     """
@@ -102,7 +65,7 @@ def detect_motion(
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             if using_crop:
                 frame = _crop_frame(frame, *crop_settings)
-            motion[i - 1] = np.sum(cv2.absdiff(frame_old, frame))
+            motion[i - 1] = np.sum(cv2.absdiff(frame, frame_old))
             frame_old = frame
         else:
             i -= 2  # Reset x to last frame detected
@@ -116,7 +79,7 @@ def detect_motion(
 
 
 def detect_freezes(
-    motion, freeze_threshold, min_duration=0,
+    motion, freeze_threshold=0.5, min_duration=0,
 ):
     """
     Denote each frame as containg freezing or not.
@@ -124,12 +87,10 @@ def detect_freezes(
     Args:
         motion (array-like): The motion numpy array. This contains the number of pixels exceding the
                              motion threshold and is obtained by the mfreeze.detect_motion function.
-        freeze_threshold (int): The threshold for Freezing. Units are the maximum number of pixels above the
-                                motion threshold a frame may have in order to be denoted a freeze.
+        freeze_threshold (float): The threshold for Freezing. Lower thresholds yeild more frames being
+                                  classified as freezes.
         min_duration (int): Defines the minimum time period for a freeze. Freezes below this threshold will not
                             be counted as freezes.
-        med_filter (bool): Whether to apply a median filter to the motion array before detecting freezes.
-        filter_size (int): If using the median filter, selects the kernel size.
     Returns:
         A numpy array with one element per frame. 0s denote absense of freezing and 1 denote freezing
     """
@@ -147,52 +108,3 @@ def detect_freezes(
     else:
         freeze = p_freeze
     return freeze
-
-
-def save_video(
-    source_video_path,
-    outfile_path,
-    freezes=None,
-    start_frame=0,
-    stop_frame=None,
-    video_size=(640, 480),
-):
-    cap = cv2.VideoCapture(source_video_path)
-    if stop_frame is None:
-        stop_frame = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    num_frames = stop_frame - start_frame
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    _, frame = cap.read()
-    suffix = Path(outfile_path).suffix
-    if suffix == ".mp4":
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    elif suffix == ".avi":
-        fourcc = cv2.VideoWriter_fourcc(*"xvid")
-    else:
-        raise ValueError(f"Unknown file suffix for outfile_path: {suffix}")
-    writer = cv2.VideoWriter(outfile_path, fourcc, fps, video_size)
-
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_pos = (10, 30)
-    font_size = 1
-    font_linetype = 2
-    font_color = 255
-    if freezes is not None:
-        end_frame = stop_frame + 1
-        freezes = freezes[start_frame:end_frame]
-        text = np.where(freezes == 1, "Freeze", "No Freeze")
-
-    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-    for i in range(num_frames - 1):
-        has_frame, frame = cap.read()
-        if has_frame:
-            if freezes is not None:
-                frame = cv2.putText(
-                    frame, text[i], font_pos, font, font_size, font_color, font_linetype
-                )
-            writer.write(frame)
-        else:
-            warnings.warn(f"Error: Only wrote {i} of {num_frames}")
-            break
-    writer.release()
-    cap.release()
