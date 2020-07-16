@@ -82,7 +82,7 @@ class BaseProcessor:
             self._crop_obj
         )
 
-    def interactive_crop(self):
+    def interactive_crop(self, frame=0):
         """
         Use an interactive cropping tool to crop a subregion of interest. All following analyses
         will use this subrgion.
@@ -93,9 +93,7 @@ class BaseProcessor:
         Returns:
             image, crop_object
         """
-        image, boxcrop = mfreeze.video.interactive_crop(
-            self.video_path, frame=self.start_frame
-        )
+        image, boxcrop = mfreeze.video.interactive_crop(self.video_path, frame=frame)
         self._using_crop_interactive = True
         self._crop_obj = boxcrop
         return image, boxcrop
@@ -244,7 +242,7 @@ class FreezeDetector(BaseProcessor):
         """
         if outpath is None:
             fn = f"{self.save_video_prefix}{self.video_name}"
-            outpath = str(self.save_video_dir / fn)
+            outpath = str(Path(self.save_video_dir) / fn)
         self.outpath = outpath
         mfreeze.video.save_freeze_video(
             self.video_path,
@@ -388,7 +386,7 @@ class LoctionTracker(BaseProcessor):
         """
         if outpath is None:
             fn = f"{self.save_video_prefix}{self.video_name}"
-            outpath = str(self.save_video_dir / fn)
+            outpath = str(Path(self.save_video_dir) / fn)
         self.outpath = outpath
         mfreeze.video.save_loco_video(
             self.video_path,

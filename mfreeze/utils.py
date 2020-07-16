@@ -57,3 +57,14 @@ def _parse_crop_settings(
         return True, (rmin, rmax, cmin, cmax)
     else:
         return False, (None, None, None, None)
+
+
+def crop_set_same(cropped_processor, to_crop_processor):
+    """
+    Use same cropping locations between processors
+    """
+    to_crop_processor.cmin = cropped_processor.cmin
+    to_crop_processor.cmax = cropped_processor.cmax
+    to_crop_processor.rmin = cropped_processor.rmin
+    to_crop_processor.rmax = cropped_processor.rmax
+    return to_crop_processor

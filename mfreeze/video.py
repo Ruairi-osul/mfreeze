@@ -118,10 +118,11 @@ def save_freeze_video(
     font_size = 1
     font_linetype = 2
     font_color = 255
-    if freezes is not None and _subset_freezes:
-        end_frame = stop_frame + 1
-        freezes = freezes[start_frame:end_frame]
+    if freezes is not None:
         text = np.where(freezes == 1, "Freeze", "No Freeze")
+        if _subset_freezes:
+            end_frame = stop_frame + 1
+            freezes = freezes[start_frame:end_frame]
 
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
     for i in range(num_frames - 1):
