@@ -19,7 +19,7 @@ my_video = "video.mp4"
 # lower values result in a detector which is more conservative
 freeze_threshold = -0.5   
 
-detector = FreezeDetector(my_video)
+detector = FreezeDetector(my_video, freeze_threshold=freeze_threshold)
 detector.detect_motion()
 detector.detect_freezes()
 detector.save_video()
