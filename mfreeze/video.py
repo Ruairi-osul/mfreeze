@@ -108,6 +108,8 @@ def save_freeze_video(
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     elif suffix == ".avi":
         fourcc = cv2.VideoWriter_fourcc(*"xvid")
+    elif suffix == ".wmv":
+        fourcc = cv2.VideoWriter_fourcc(*"wmv3")
     else:
         raise ValueError(f"Unknown file suffix for outfile_path: {suffix}")
 
@@ -125,16 +127,28 @@ def save_freeze_video(
             freezes = freezes[start_frame:end_frame]
 
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-    for i in range(num_frames - 1):
+    for i in range(num_frames - 2):
         has_frame, frame = cap.read()
         if has_frame:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             if using_crop:
                 frame = _crop_frame(frame, *crop_settings)
             if freezes is not None:
-                frame = cv2.putText(
-                    frame, text[i], font_pos, font, font_size, font_color, font_linetype
-                )
+                try:
+                    frame = cv2.putText(
+                        frame,
+                        text[i],
+                        font_pos,
+                        font,
+                        font_size,
+                        font_color,
+                        font_linetype,
+                    )
+                except IndexError:
+                    warnings.warn(
+                        f"Less Freezes than frames passed. Exiting at frame {i}"
+                    )
+                    break
             writer.write(frame)
         else:
             warnings.warn(f"Error: Only wrote {i} of {num_frames}")
@@ -205,6 +219,8 @@ def save_loco_video(
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     elif suffix == ".avi":
         fourcc = cv2.VideoWriter_fourcc(*"xvid")
+    elif suffix == ".wmv":
+        fourcc = cv2.VideoWriter_fourcc(*"wmv3")
     else:
         raise ValueError(f"Unknown file suffix for outfile_path: {suffix}")
 
@@ -216,7 +232,7 @@ def save_loco_video(
 
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
-    for i in range(num_frames - 1):
+    for i in range(num_frames - 2):
         has_frame, frame = cap.read()
         if has_frame:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

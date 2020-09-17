@@ -272,6 +272,7 @@ class FreezeDetector(BaseProcessor):
         TODO: Freeze docs
         """
         video_name = self.video_name
+        fps = self.video_fps
         frame = np.arange(self.start_frame, self.start_frame + len(self.motion_))
         time = np.round(frame * (1 / self.video_fps), 6)
         was_freezing = self.freezes_
@@ -280,6 +281,7 @@ class FreezeDetector(BaseProcessor):
                 "frame": frame,
                 "time": time,
                 "video_name": video_name,
+                "fps": fps,
                 "was_freezing": was_freezing,
             }
         )
@@ -409,11 +411,19 @@ class LoctionTracker(BaseProcessor):
         video_name = self.video_name
         frame = np.arange(self.start_frame, self.start_frame + len(self.x_))
         time = np.round(frame * (1 / self.video_fps), 6)
+        fps = self.video_fps
         x = self.x_
         y = self.y_
         return (
             pd.DataFrame(
-                {"frame": frame, "time": time, "video_name": video_name, "x": x, "y": y}
+                {
+                    "frame": frame,
+                    "time": time,
+                    "video_name": video_name,
+                    "fps": fps,
+                    "x": x,
+                    "y": y,
+                }
             )
             .assign(
                 distance=lambda x: self._distance(
