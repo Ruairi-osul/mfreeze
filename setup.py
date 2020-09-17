@@ -10,7 +10,7 @@ setup(
     author="Ruairi O'Sullivan",
     author_email="ruairi.osullivan.work@gmail.com",
     description="Detect freezes",
-    project_urls={"Source": "https://github.com/Ruairi-osul/ezbootstrap"},
+    project_urls={"Source": "https://github.com/Ruairi-osul/mfreeze"},
     packages=find_packages(),
     python_requires=">=3.3",
     install_requires=reqs,
