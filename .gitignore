@@ -3,5 +3,4 @@ venv
 *.egg*
 .ipynb_*
 vids*
-notebooks*
 __pycache__
