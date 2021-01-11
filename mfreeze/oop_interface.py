@@ -141,8 +141,9 @@ class FreezeDetector(BaseProcessor):
         start_frame=0,
         stop_frame=None,
         use_med_filter=True,
+        motion_algo="MOG",
         med_filter_size=3,
-        freeze_threshold=0.5,
+        freeze_threshold=None,
         min_freeze_duration=5,
         save_video_prefix="freeze_video_",
         save_video_dir=None,
@@ -164,6 +165,14 @@ class FreezeDetector(BaseProcessor):
         self.save_video_dir = (
             Path(".").absolute() if save_video_dir is None else save_video_dir
         )
+        if motion_algo == "MOG":
+            self.motion_algo = mfreeze.freezelib.detect_motion_MOG
+        elif motion_algo == "ABSDIFF":
+            self.motion_algo = mfreeze.freezelib.detect_motion
+        else:
+            raise ValueError(
+                "Unknown Motionion detection algorythm. Select from {'MOG', 'ABSDIFF'}"
+            )
         self.use_med_filter = use_med_filter
         self.med_filter_size = med_filter_size
         self.freeze_threshold = freeze_threshold
@@ -181,7 +190,7 @@ class FreezeDetector(BaseProcessor):
         med_filter_size = (
             med_filter_size if med_filter_size is not None else self.med_filter_size
         )
-        self.motion_ = mfreeze.freezelib.detect_motion(
+        self.motion_ = self.motion_algo(
             self.video_path,
             start_frame=self.start_frame,
             stop_frame=self.stop_frame,

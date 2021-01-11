@@ -28,13 +28,13 @@ def interactive_crop(
     _, frame = cap.read()
     print(frame.shape)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # frame = frame[::-1, :]  # inverse y axis for plotting
     cap.release()
 
     image = hv.Image((np.arange(frame.shape[1]), np.arange(frame.shape[0]), frame))
     image.opts(
         width=frame.shape[1],
         height=frame.shape[0],
-        invert_yaxis=True,
         cmap="gray",
         colorbar=True,
         toolbar="below",

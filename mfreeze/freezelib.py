@@ -78,6 +78,55 @@ def detect_motion(
     return motion
 
 
+def detect_motion_MOG(
+    video_path,
+    use_med_filter=True,
+    med_filter_size=3,
+    start_frame=0,
+    stop_frame=None,
+    crop_interactive=None,
+    crop_cmin=None,
+    crop_cmax=None,
+    crop_rmin=None,
+    crop_rmax=None,
+):
+    cap = cv2.VideoCapture(video_path)
+    if stop_frame is None:
+        stop_frame = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+    _, frame = cap.read()
+    frame_nrow, frame_ncol, _ = frame.shape
+    using_crop, crop_settings = _parse_crop_settings(
+        frame_nrow,
+        frame_ncol,
+        crop_interactive,
+        crop_cmin,
+        crop_cmax,
+        crop_rmin,
+        crop_rmax,
+    )
+    bg1 = cv2.createBackgroundSubtractorMOG2(detectShadows=True)
+    num_frames = stop_frame - start_frame
+    motion = np.zeros(num_frames - 1, dtype="uint32")
+    for i in range(1, len(motion) + 1):
+        frame_present, frame = cap.read()
+        if frame_present:
+            if using_crop:
+                frame = _crop_frame(frame, *crop_settings)
+            frame = bg1.apply(frame)
+            motion[i - 1] = np.count_nonzero(frame)
+            frame = frame
+        else:
+            i -= 2  # Reset x to last frame detected
+            motion = motion[:i]
+            break
+    cap.release()
+    if use_med_filter:
+        motion = medfilt(motion, med_filter_size)
+    return motion
+
+
 def detect_freezes(
     motion, freeze_threshold=0.5, min_duration=0,
 ):
