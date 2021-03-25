@@ -15,6 +15,7 @@ def detect_motion(
     crop_cmax=None,
     crop_rmin=None,
     crop_rmax=None,
+    compression_factor=None,
 ):
     """
     Estimates the amount of motion in each frame in of a video.
@@ -62,9 +63,17 @@ def detect_motion(
     for i in range(1, len(motion) + 1):
         frame_present, frame = cap.read()
         if frame_present:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             if using_crop:
                 frame = _crop_frame(frame, *crop_settings)
+            if compression_factor:
+                frame = cv2.resize(
+                    frame,
+                    dsize=(
+                        int(frame.shape[1] / compression_factor),
+                        int(frame.shape[0] / compression_factor),
+                    ),
+                )
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             motion[i - 1] = np.sum(cv2.absdiff(frame, frame_old))
             frame_old = frame
         else:
@@ -85,10 +94,12 @@ def detect_motion_MOG(
     start_frame=0,
     stop_frame=None,
     crop_interactive=None,
+    MOG_history=300,
     crop_cmin=None,
     crop_cmax=None,
     crop_rmin=None,
     crop_rmax=None,
+    compression_factor=None,
 ):
     cap = cv2.VideoCapture(video_path)
     if stop_frame is None:
@@ -106,7 +117,7 @@ def detect_motion_MOG(
         crop_rmin,
         crop_rmax,
     )
-    bg1 = cv2.createBackgroundSubtractorMOG2(detectShadows=True)
+    bg1 = cv2.createBackgroundSubtractorMOG2(history=MOG_history, detectShadows=False)
     num_frames = stop_frame - start_frame
     motion = np.zeros(num_frames - 1, dtype="uint32")
     for i in range(1, len(motion) + 1):
@@ -114,6 +125,14 @@ def detect_motion_MOG(
         if frame_present:
             if using_crop:
                 frame = _crop_frame(frame, *crop_settings)
+            if compression_factor:
+                frame = cv2.resize(
+                    frame,
+                    dsize=(
+                        int(frame.shape[1] / compression_factor),
+                        int(frame.shape[0] / compression_factor),
+                    ),
+                )
             frame = bg1.apply(frame)
             motion[i - 1] = np.count_nonzero(frame)
             frame = frame

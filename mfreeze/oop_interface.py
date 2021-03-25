@@ -143,6 +143,7 @@ class FreezeDetector(BaseProcessor):
         use_med_filter=True,
         motion_algo="MOG",
         med_filter_size=3,
+        compression_factor=None,
         freeze_threshold=None,
         min_freeze_duration=5,
         save_video_prefix="freeze_video_",
@@ -178,6 +179,7 @@ class FreezeDetector(BaseProcessor):
         self.freeze_threshold = freeze_threshold
         self.min_freeze_duration = min_freeze_duration
         self.save_video_prefix = save_video_prefix
+        self.compression_factor = compression_factor
 
     @_update_plot_interactive
     def detect_motion(self, use_med_filter=None, med_filter_size=None):
@@ -200,6 +202,7 @@ class FreezeDetector(BaseProcessor):
             crop_rmax=self.rmax,
             crop_cmin=self.cmin,
             crop_cmax=self.cmax,
+            compression_factor=self.compression_factor,
         )
         self._has_ran = True
         return self.motion_
@@ -232,7 +235,7 @@ class FreezeDetector(BaseProcessor):
         _, ax = plt.subplots(figsize=figsize)
         ax.plot(self.motion_)
         ax.set_xlabel("Frame")
-        ax.set_ylabel("Normalised Motion")
+        ax.set_ylabel("Motion")
         if self.freeze_threshold is not None:
             ax.axhline(
                 self.freeze_threshold,
